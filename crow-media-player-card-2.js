@@ -50,10 +50,11 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   connectedCallback() {
     this._timer = setInterval(() => this.updateLiveProgress(), 1000);
     this._alexaPulse = setInterval(() => {
-      if (this._hass && this._entity && this._hass.connected !== false) {
-        try {
-          this._hass.callService('homeassistant', 'update_entity', { entity_id: this._entity }).catch(() => {});
-        } catch (e) {}
+      // FIX: Check if hass exists, connection is active, and entity is valid before calling service
+      if (this._hass && this._hass.connected && this._entity && this._hass.states[this._entity]) {
+        this._hass.callService('homeassistant', 'update_entity', { entity_id: this._entity }).catch(() => {
+          // Silent catch to prevent UI errors during transient connection drops
+        });
       }
     }, 10000);
   }
@@ -290,7 +291,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 }
 
-// --- VISUAL EDITOR (Fixed with Volume Accent Option) ---
+// --- VISUAL EDITOR ---
 class CrowMediaPlayerCard2Editor extends HTMLElement {
   constructor() {
     super();
@@ -335,33 +336,35 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
         .row { display: flex; flex-direction: column; gap: 8px; }
         label { font-weight: bold; font-size: 14px; }
         input[type="text"], .checklist { width: 100%; background: var(--card-background-color); color: var(--primary-text-color); border: 1px solid #444; border-radius: 4px; }
-        .checklist { max-height: 250px; overflow-y: auto; }
+        .checklist { max-height: 250px; overflow-y: auto; margin-top: 5px; }
         .check-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #333; }
         .dragging { opacity: 0.3; }
         .drag-handle { cursor: grab; padding: 10px; color: #888; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; }
-        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .color-section { display: flex; gap: 15px; }
+        .color-item { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        input[type="color"] { width: 100%; height: 40px; cursor: pointer; border: 1px solid #444; border-radius: 4px; background: none; }
       </style>
       <div class="container">
-        <div class="color-grid">
-            <div class="row">
-              <label>Accent Color</label>
-              <input type="color" id="accent_color" style="width: 100%; height: 40px;" value="${this._config.accent_color || '#007AFF'}">
-            </div>
-            <div class="row">
-              <label>Volume Accent</label>
-              <input type="color" id="volume_accent" style="width: 100%; height: 40px;" value="${this._config.volume_accent || this._config.accent_color || '#007AFF'}">
-            </div>
-        </div>
-        <div class="row">
-          <div class="toggle-row">
-            <label>Auto Switch</label>
-            <input type="checkbox" id="auto_switch" ${this._config.auto_switch !== false ? 'checked' : ''}>
+        <div class="color-section">
+          <div class="color-item">
+            <label>Main Accent</label>
+            <input type="color" id="accent_color">
+          </div>
+          <div class="color-item">
+            <label>Volume Accent</label>
+            <input type="color" id="volume_accent">
           </div>
         </div>
         <div class="row">
-          <label>Media Players</label>
-          <input type="text" id="search" placeholder="Filter entities..." value="${this._searchTerm}">
+          <div class="toggle-row">
+            <label>Auto Switch Entities</label>
+            <input type="checkbox" id="auto_switch">
+          </div>
+        </div>
+        <div class="row">
+          <label>Manage Media Players</label>
+          <input type="text" id="search" placeholder="Filter entities...">
           <div class="checklist" id="entityList">
             ${sortedList.map(ent => {
               const isSelected = selected.includes(ent);
@@ -369,7 +372,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
                 <div class="check-item" data-id="${ent}" draggable="${isSelected}">
                   <div class="drag-handle">☰</div>
                   <input type="checkbox" ${isSelected ? 'checked' : ''}>
-                  <span>${this._hass.states[ent]?.attributes?.friendly_name || ent}</span>
+                  <span style="margin-left: 10px;">${this._hass.states[ent]?.attributes?.friendly_name || ent}</span>
                 </div>
               `;
             }).join('')}
@@ -431,15 +434,17 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
   }
 
   _setupListeners() {
-    this.shadowRoot.querySelectorAll('.check-item input').forEach(cb => {
+    const root = this.shadowRoot;
+    root.querySelectorAll('.check-item input').forEach(cb => {
       cb.onclick = () => this._saveOrder();
     });
-    this.shadowRoot.getElementById('accent_color').onchange = (e) => this._updateConfig('accent_color', e.target.value);
-    this.shadowRoot.getElementById('volume_accent').onchange = (e) => this._updateConfig('volume_accent', e.target.value);
-    this.shadowRoot.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
+    root.getElementById('accent_color').oninput = (e) => this._updateConfig('accent_color', e.target.value);
+    root.getElementById('volume_accent').oninput = (e) => this._updateConfig('volume_accent', e.target.value);
+    root.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
   }
 
   _updateConfig(key, value) {
+    if (!this._config) return;
     const newConfig = { ...this._config, [key]: value };
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
   }
