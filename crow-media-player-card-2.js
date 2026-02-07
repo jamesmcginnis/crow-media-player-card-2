@@ -99,76 +99,80 @@ class CrowMediaPlayerCard2 extends HTMLElement {
           color: #fff !important; 
           border-radius: 24px !important; 
           overflow: hidden; 
-          padding-bottom: 15px; 
           font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; 
           position: relative; 
           border: 1px solid rgba(255, 255, 255, 0.18) !important;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-          display: flex;
-          flex-direction: column;
+          transition: all 0.3s ease;
         }
         .size-toggle { 
-          position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.15); 
-          border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: #fff; z-index: 10; 
+          position: absolute; top: 12px; right: 12px; background: rgba(255, 255, 255, 0.15); 
+          border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #fff; z-index: 10; 
           display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
         }
-        .art-wrapper { width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, rgba(40, 40, 45, 0.8), rgba(28, 28, 30, 0.9)); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; position: relative; }
+        .art-wrapper { width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, rgba(40, 40, 45, 0.8), rgba(28, 28, 30, 0.9)); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
         .art-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .content { padding: 22px 20px 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .content { padding: 20px; display: flex; flex-direction: column; }
         .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
-        .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; flex-shrink: 0; }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
         
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
-        .marquee-text { display: inline-block; padding-left: 0%; animation: none; }
+        .marquee-text { display: inline-block; animation: none; }
         @keyframes marquee { 
           0% { transform: translateX(0); }
           10% { transform: translateX(0); }
-          90% { transform: translateX(calc(-100% + 150px)); }
-          100% { transform: translateX(calc(-100% + 150px)); }
+          90% { transform: translateX(calc(-100% + 120px)); }
+          100% { transform: translateX(calc(-100% + 120px)); }
         }
 
-        .track-title { font-size: 19px; font-weight: 600; letter-spacing: -0.3px; color: #fff; }
-        .track-artist { font-size: 15px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 400; }
-        .progress-bar { height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 3px; margin-bottom: 6px; cursor: pointer; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
-        .progress-times { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.5); font-variant-numeric: tabular-nums; }
-        .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 18px; }
-        .play-btn svg { width: 48px; height: 48px; fill: #fff; }
-        .nav-btn svg { width: 32px; height: 32px; fill: rgba(255, 255, 255, 0.9); }
-        .extra-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.5); }
+        .track-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; color: #fff; }
+        .track-artist { font-size: 14px; color: rgba(255, 255, 255, 0.6); font-weight: 400; }
+        .progress-bar { height: 4px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; margin-bottom: 4px; cursor: pointer; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 2px; transition: width 0.3s ease; }
+        .progress-times { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255, 255, 255, 0.4); font-variant-numeric: tabular-nums; }
+        .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 20px; }
+        .play-btn svg { width: 44px; height: 44px; fill: #fff; }
+        .nav-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.9); }
+        .extra-btn svg { width: 24px; height: 24px; fill: rgba(255, 255, 255, 0.4); }
         .extra-btn.active svg { fill: var(--accent); }
-        .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 12px; }
-        .selector { width: 100%; padding: 11px 14px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; margin-top: 16px; font-size: 14px; cursor: pointer; }
+        .volume-slider { width: 100%; height: 4px; accent-color: var(--vol-accent); margin-top: 10px; }
+        .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; }
         
-        /* IMPROVED COMPACT MODE */
-        .mode-compact { min-height: 200px; justify-content: center; }
+        /* THE NEW ULTRA-COMPACT LAYOUT */
         .mode-compact .art-wrapper { display: none; }
-        .mode-compact .mini-art { display: flex; }
-        .mode-compact .content { padding: 15px; justify-content: center; gap: 5px; }
-        .mode-compact .controls { margin: 10px 0; }
-        .mode-compact .selector { margin-top: 10px; }
+        .mode-compact .mini-art { display: flex; width: 48px; height: 48px; }
+        .mode-compact .content { padding: 12px; gap: 8px; }
+        .mode-compact .info-row { margin-bottom: 0; flex: 1; }
+        .mode-compact .track-title { font-size: 15px; }
+        .mode-compact .track-artist { font-size: 13px; }
+        .mode-compact .controls { margin: 5px 0; gap: 12px; justify-content: flex-end; }
+        .mode-compact .play-btn svg { width: 34px; height: 34px; }
+        .mode-compact .nav-btn svg { width: 22px; height: 22px; }
+        .mode-compact .extra-btn { display: none; } /* Remove shuffle/repeat in small view */
+        .mode-compact .selector, .mode-compact .progress-times { display: none; } /* Save space */
+        .mode-compact .progress-bar { margin: 0; }
+        .mode-compact .size-toggle { top: 8px; right: 8px; width: 24px; height: 24px; }
+        .mode-compact .size-toggle svg { width: 14px; height: 14px; }
 
         .hidden { display: none !important; }
-        button { background: none; border: none; cursor: pointer; }
-        button.pressed svg { filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5)); }
+        button { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+        button.pressed svg { filter: brightness(1.2); }
         .placeholder-svg { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
       </style>
       <ha-card id="cardOuter" class="mode-compact">
-        <button class="size-toggle" id="modeBtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+        <button class="size-toggle" id="modeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
         <div class="art-wrapper" id="artClick"><img id="albumImg"><div id="mainPlaceholder" class="placeholder-svg"></div></div>
         <div class="content">
           <div class="info-row">
             <div class="mini-art" id="miniArtClick"><img id="miniImg"><div id="miniPlaceholder" class="placeholder-svg"></div></div>
-            <div style="flex:1; overflow:hidden;">
+            <div style="flex:1; overflow:hidden; padding-right: 30px;">
               <div class="marquee-container"><div class="track-title marquee-text" id="tTitle">Loading...</div></div>
               <div class="track-artist" id="tArtist"></div>
             </div>
           </div>
-          <div id="progSection">
-            <div class="progress-bar" id="progWrap"><div class="progress-fill" id="progFill"></div></div>
-            <div class="progress-times"><span id="pCur">0:00</span><span id="pTot">0:00</span></div>
-          </div>
+          <div class="progress-bar" id="progWrap"><div class="progress-fill" id="progFill"></div></div>
+          <div class="progress-times"><span id="pCur">0:00</span><span id="pTot">0:00</span></div>
           <div class="controls">
             <button class="extra-btn" id="btnShuffle"><svg viewBox="0 0 24 24"><path d="M14.83,13.41L13.42,14.82L16.55,17.95L14.5,20H20V14.5L17.96,16.54L14.83,13.41M14.5,4H20V9.5L17.96,7.46L5.41,20L4,18.59L16.54,6.04L14.5,4M10.59,9.17L5.41,4L4,5.41L9.17,10.58L10.59,9.17Z"/></svg></button>
             <button class="nav-btn" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
@@ -209,14 +213,16 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     const btnShuffle = r.getElementById('btnShuffle');
     const btnRepeat = r.getElementById('btnRepeat');
 
-    btnPlay.onclick = () => this.call('media_play_pause');
-    btnPrev.onclick = () => this.call('media_previous_track');
-    btnNext.onclick = () => this.call('media_next_track');
-    btnShuffle.onclick = () => {
+    btnPlay.onclick = (e) => { e.stopPropagation(); this.call('media_play_pause'); };
+    btnPrev.onclick = (e) => { e.stopPropagation(); this.call('media_previous_track'); };
+    btnNext.onclick = (e) => { e.stopPropagation(); this.call('media_next_track'); };
+    btnShuffle.onclick = (e) => {
+      e.stopPropagation();
       const state = this._hass.states[this._entity];
       this.call('shuffle_set', { shuffle: !state.attributes.shuffle });
     };
-    btnRepeat.onclick = () => {
+    btnRepeat.onclick = (e) => {
+      e.stopPropagation();
       const state = this._hass.states[this._entity];
       const next = state.attributes.repeat === 'all' ? 'one' : state.attributes.repeat === 'one' ? 'off' : 'all';
       this.call('repeat_set', { repeat: next });
@@ -230,7 +236,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
       this._manualSelection = true;
       this.updateContent(this._hass.states[this._entity]);
     };
-    r.getElementById('progWrap').onclick = (e) => this.doSeek(e);
+    r.getElementById('progWrap').onclick = (e) => { e.stopPropagation(); this.doSeek(e); };
   }
 
   call(svc, data = {}) {
@@ -258,7 +264,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     const titleText = state.attributes.media_title || (isPlaying ? 'Music' : 'Idle');
     titleEl.textContent = titleText;
 
-    if (titleText.length > 25) {
+    if (titleText.length > 20) {
       titleEl.style.animation = "marquee 8s linear infinite alternate";
     } else {
       titleEl.style.animation = "none";
@@ -286,7 +292,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
       [mainPl, miniPl].forEach(el => el.classList.add('hidden'));
     } else {
       mainPl.innerHTML = this.getDeviceIcon(state);
-      miniPl.innerHTML = this.getDeviceIcon(state).replace('width="120" height="120"', 'width="30" height="30"');
+      miniPl.innerHTML = this.getDeviceIcon(state).replace('width="120" height="120"', 'width="28" height="28"');
       [mainImg, miniImg].forEach(el => el.classList.add('hidden'));
       [mainPl, miniPl].forEach(el => el.classList.remove('hidden'));
     }
