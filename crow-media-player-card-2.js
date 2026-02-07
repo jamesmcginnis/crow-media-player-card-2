@@ -132,7 +132,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .vol-icon { display: none; width: 18px; height: 18px; fill: rgba(255,255,255,0.5); cursor: pointer; }
         .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; text-align: center; text-align-last: center; }
         
-        /* MODE COMPACT */
         .mode-compact .art-wrapper { display: none; }
         .mode-compact .mini-art { display: flex; width: 44px; height: 44px; }
         .mode-compact .content { padding: 10px; gap: 2px; }
@@ -291,7 +290,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 }
 
-// --- VISUAL EDITOR (Fixed) ---
+// --- VISUAL EDITOR (Fixed with Volume Accent Option) ---
 class CrowMediaPlayerCard2Editor extends HTMLElement {
   constructor() {
     super();
@@ -315,6 +314,8 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     if (!root) return;
     const colorInput = root.getElementById('accent_color');
     if (colorInput) colorInput.value = this._config.accent_color || '#007AFF';
+    const volColorInput = root.getElementById('volume_accent');
+    if (volColorInput) volColorInput.value = this._config.volume_accent || this._config.accent_color || '#007AFF';
     const autoSwitchInput = root.getElementById('auto_switch');
     if (autoSwitchInput) autoSwitchInput.checked = this._config.auto_switch !== false;
   }
@@ -339,11 +340,18 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
         .dragging { opacity: 0.3; }
         .drag-handle { cursor: grab; padding: 10px; color: #888; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       </style>
       <div class="container">
-        <div class="row">
-          <label>Accent Color</label>
-          <input type="color" id="accent_color" style="width: 100%; height: 40px;" value="${this._config.accent_color || '#007AFF'}">
+        <div class="color-grid">
+            <div class="row">
+              <label>Accent Color</label>
+              <input type="color" id="accent_color" style="width: 100%; height: 40px;" value="${this._config.accent_color || '#007AFF'}">
+            </div>
+            <div class="row">
+              <label>Volume Accent</label>
+              <input type="color" id="volume_accent" style="width: 100%; height: 40px;" value="${this._config.volume_accent || this._config.accent_color || '#007AFF'}">
+            </div>
         </div>
         <div class="row">
           <div class="toggle-row">
@@ -427,6 +435,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
       cb.onclick = () => this._saveOrder();
     });
     this.shadowRoot.getElementById('accent_color').onchange = (e) => this._updateConfig('accent_color', e.target.value);
+    this.shadowRoot.getElementById('volume_accent').onchange = (e) => this._updateConfig('volume_accent', e.target.value);
     this.shadowRoot.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
   }
 
