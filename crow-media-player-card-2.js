@@ -104,6 +104,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
           position: relative; 
           border: 1px solid rgba(255, 255, 255, 0.18) !important;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+          display: flex;
+          flex-direction: column;
         }
         .size-toggle { 
           position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.15); 
@@ -112,7 +114,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         }
         .art-wrapper { width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, rgba(40, 40, 45, 0.8), rgba(28, 28, 30, 0.9)); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; position: relative; }
         .art-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .content { padding: 22px 20px 20px; }
+        .content { padding: 22px 20px 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
         .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
@@ -122,8 +124,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         @keyframes marquee { 
           0% { transform: translateX(0); }
           10% { transform: translateX(0); }
-          90% { transform: translateX(calc(-100% + 200px)); }
-          100% { transform: translateX(calc(-100% + 200px)); }
+          90% { transform: translateX(calc(-100% + 150px)); }
+          100% { transform: translateX(calc(-100% + 150px)); }
         }
 
         .track-title { font-size: 19px; font-weight: 600; letter-spacing: -0.3px; color: #fff; }
@@ -131,15 +133,22 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .progress-bar { height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 3px; margin-bottom: 6px; cursor: pointer; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
         .progress-times { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.5); font-variant-numeric: tabular-nums; }
-        .controls { display: flex; justify-content: center; align-items: center; margin: 24px 0 20px; gap: 18px; }
+        .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 18px; }
         .play-btn svg { width: 48px; height: 48px; fill: #fff; }
         .nav-btn svg { width: 32px; height: 32px; fill: rgba(255, 255, 255, 0.9); }
         .extra-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.5); }
         .extra-btn.active svg { fill: var(--accent); }
         .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 12px; }
         .selector { width: 100%; padding: 11px 14px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; margin-top: 16px; font-size: 14px; cursor: pointer; }
+        
+        /* IMPROVED COMPACT MODE */
+        .mode-compact { min-height: 200px; justify-content: center; }
         .mode-compact .art-wrapper { display: none; }
         .mode-compact .mini-art { display: flex; }
+        .mode-compact .content { padding: 15px; justify-content: center; gap: 5px; }
+        .mode-compact .controls { margin: 10px 0; }
+        .mode-compact .selector { margin-top: 10px; }
+
         .hidden { display: none !important; }
         button { background: none; border: none; cursor: pointer; }
         button.pressed svg { filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5)); }
@@ -156,8 +165,10 @@ class CrowMediaPlayerCard2 extends HTMLElement {
               <div class="track-artist" id="tArtist"></div>
             </div>
           </div>
-          <div class="progress-bar" id="progWrap"><div class="progress-fill" id="progFill"></div></div>
-          <div class="progress-times"><span id="pCur">0:00</span><span id="pTot">0:00</span></div>
+          <div id="progSection">
+            <div class="progress-bar" id="progWrap"><div class="progress-fill" id="progFill"></div></div>
+            <div class="progress-times"><span id="pCur">0:00</span><span id="pTot">0:00</span></div>
+          </div>
           <div class="controls">
             <button class="extra-btn" id="btnShuffle"><svg viewBox="0 0 24 24"><path d="M14.83,13.41L13.42,14.82L16.55,17.95L14.5,20H20V14.5L17.96,16.54L14.83,13.41M14.5,4H20V9.5L17.96,7.46L5.41,20L4,18.59L16.54,6.04L14.5,4M10.59,9.17L5.41,4L4,5.41L9.17,10.58L10.59,9.17Z"/></svg></button>
             <button class="nav-btn" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
