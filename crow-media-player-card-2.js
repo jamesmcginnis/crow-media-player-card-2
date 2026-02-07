@@ -12,7 +12,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF', blur_amount: 40 };
+    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF' };
   }
 
   setConfig(config) {
@@ -20,7 +20,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this._config = {
       accent_color: '#007AFF',
       volume_accent: '#007AFF',
-      blur_amount: 40,
       auto_switch: true,
       ...config
     };
@@ -92,11 +91,11 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; --blur: 40px; }
+        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; }
         ha-card { 
           background: rgba(28, 28, 30, 0.72) !important;
-          backdrop-filter: blur(var(--blur)) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(var(--blur)) saturate(180%) !important;
+          backdrop-filter: blur(40px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
           color: #fff !important; 
           border-radius: 24px !important; 
           overflow: hidden; 
@@ -118,7 +117,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Scrolling Text logic */
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
         .marquee-text { display: inline-block; padding-left: 0%; animation: none; }
         @keyframes marquee { 
@@ -242,16 +240,13 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     if (!state || !r) return;
     const isPlaying = state.state === 'playing';
     
-    // Set Config Styles
     r.host.style.setProperty('--accent', this._config.accent_color);
     r.host.style.setProperty('--vol-accent', this._config.volume_accent || this._config.accent_color);
-    r.host.style.setProperty('--blur', (this._config.blur_amount || 40) + 'px');
 
     const titleEl = r.getElementById('tTitle');
     const titleText = state.attributes.media_title || (isPlaying ? 'Music' : 'Idle');
     titleEl.textContent = titleText;
 
-    // Apply marquee if title is long
     if (titleText.length > 25) {
       titleEl.style.animation = "marquee 8s linear infinite alternate";
     } else {
@@ -329,7 +324,6 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     if (!root) return;
     root.getElementById('accent_color').value = this._config.accent_color || '#007AFF';
     root.getElementById('volume_accent').value = this._config.volume_accent || '#007AFF';
-    root.getElementById('blur_amount').value = this._config.blur_amount || 40;
     root.getElementById('auto_switch').checked = this._config.auto_switch !== false;
   }
 
@@ -366,11 +360,6 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
             <label>Volume Accent</label>
             <input type="color" id="volume_accent" style="width: 100%; height: 40px;" value="${this._config.volume_accent || '#007AFF'}">
           </div>
-        </div>
-
-        <div class="row">
-          <label>Glass Blur (px): <span id="blurVal">${this._config.blur_amount || 40}</span></label>
-          <input type="range" id="blur_amount" min="0" max="100" value="${this._config.blur_amount || 40}">
         </div>
 
         <div class="row">
@@ -459,12 +448,6 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     this.shadowRoot.getElementById('accent_color').onchange = (e) => this._updateConfig('accent_color', e.target.value);
     this.shadowRoot.getElementById('volume_accent').onchange = (e) => this._updateConfig('volume_accent', e.target.value);
     this.shadowRoot.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
-    
-    const blurSlider = this.shadowRoot.getElementById('blur_amount');
-    blurSlider.oninput = (e) => {
-      this.shadowRoot.getElementById('blurVal').textContent = e.target.value;
-      this._updateConfig('blur_amount', parseInt(e.target.value));
-    };
   }
 
   _updateConfig(key, value) {
