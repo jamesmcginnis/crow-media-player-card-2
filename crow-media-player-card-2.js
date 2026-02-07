@@ -50,7 +50,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   connectedCallback() {
     this._timer = setInterval(() => this.updateLiveProgress(), 1000);
     this._alexaPulse = setInterval(() => {
-      if (this._hass && this._entity && this._hass.connected !== false) {
+      // FIX: Added connection check to prevent "Connection Lost" errors
+      if (this._hass && this._hass.connected && this._entity) {
         try {
           this._hass.callService('homeassistant', 'update_entity', { entity_id: this._entity }).catch(() => {});
         } catch (e) {}
@@ -139,18 +140,18 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .volume-slider { width: 100%; height: 4px; accent-color: var(--vol-accent); margin-top: 10px; }
         .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; }
         
-        /* THE NEW ULTRA-COMPACT LAYOUT */
+        /* ULTRA-COMPACT LAYOUT */
         .mode-compact .art-wrapper { display: none; }
         .mode-compact .mini-art { display: flex; width: 48px; height: 48px; }
         .mode-compact .content { padding: 12px; gap: 8px; }
         .mode-compact .info-row { margin-bottom: 0; flex: 1; }
         .mode-compact .track-title { font-size: 15px; }
         .mode-compact .track-artist { font-size: 13px; }
-        .mode-compact .controls { margin: 5px 0; gap: 12px; justify-content: flex-end; }
+        .mode-compact .controls { margin: 5px 0; gap: 15px; justify-content: center; } 
         .mode-compact .play-btn svg { width: 34px; height: 34px; }
         .mode-compact .nav-btn svg { width: 22px; height: 22px; }
-        .mode-compact .extra-btn { display: none; } /* Remove shuffle/repeat in small view */
-        .mode-compact .selector, .mode-compact .progress-times { display: none; } /* Save space */
+        .mode-compact .extra-btn { display: none; } 
+        .mode-compact .selector, .mode-compact .progress-times { display: none; } 
         .mode-compact .progress-bar { margin: 0; }
         .mode-compact .size-toggle { top: 8px; right: 8px; width: 24px; height: 24px; }
         .mode-compact .size-toggle svg { width: 14px; height: 14px; }
@@ -473,7 +474,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
   }
 }
 
-// --- REGISTRATION WITH SAFETY CHECK ---
+// --- REGISTRATION ---
 if (!customElements.get('crow-media-player-card-2')) {
   customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
 }
