@@ -108,6 +108,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
           border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #fff; z-index: 10; 
           display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
         }
+        .size-toggle svg { width: 18px; height: 18px; }
         .art-wrapper { width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, rgba(40, 40, 45, 0.8), rgba(28, 28, 30, 0.9)); display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
         .art-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .content { padding: 20px; display: flex; flex-direction: column; }
@@ -126,7 +127,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .track-artist { font-size: 14px; color: rgba(255, 255, 255, 0.6); }
         .progress-bar { height: 4px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; margin-bottom: 4px; cursor: pointer; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 2px; transition: width 0.3s ease; }
-        .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 20px; }
+        .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 20px; position: relative; }
         
         button:active svg, .vol-icon:active { 
           filter: drop-shadow(0 0 8px var(--accent));
@@ -139,23 +140,29 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .play-btn svg { width: 44px; height: 44px; fill: #fff; }
         .nav-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.9); }
         .volume-slider { width: 100%; height: 4px; accent-color: var(--vol-accent); margin-top: 10px; }
-        .vol-icon { display: none; width: 18px; height: 18px; fill: rgba(255,255,255,0.5); margin-left: auto; cursor: pointer; transition: transform 0.1s ease; }
+        .vol-section { display: contents; }
+        .vol-icon { display: none; width: 18px; height: 18px; fill: rgba(255,255,255,0.5); cursor: pointer; transition: transform 0.1s ease; }
 
         .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; }
         
+        /* MODE COMPACT */
         .mode-compact .art-wrapper { display: none; }
         .mode-compact .mini-art { display: flex; width: 44px; height: 44px; }
         .mode-compact .content { padding: 10px; gap: 2px; }
         .mode-compact .info-row { margin-bottom: 0; }
         .mode-compact .track-title { font-size: 14px; }
         .mode-compact .track-artist { font-size: 12px; }
-        .mode-compact .controls { margin: 6px 0 2px 0; gap: 12px; justify-content: flex-start; }
+        .mode-compact .controls { margin: 6px 0 2px 0; gap: 12px; justify-content: center; }
         .mode-compact .play-btn svg { width: 30px; height: 30px; }
         .mode-compact .nav-btn svg { width: 20px; height: 20px; }
-        .mode-compact .vol-icon { display: block; }
-        .mode-compact .volume-slider { margin-top: 0; width: 70px; margin-left: 4px; }
+        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 10px; }
+        .mode-compact .vol-icon { display: block; flex-shrink: 0; }
+        .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 60px; }
         .mode-compact .selector, .mode-compact .extra-btn { display: none; }
-        .mode-compact .size-toggle { top: 8px; right: 8px; width: 22px; height: 22px; }
+        
+        /* Increased Circle size for Resize Icon in Compact mode */
+        .mode-compact .size-toggle { top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.1); }
+        .mode-compact .size-toggle svg { width: 14px; height: 14px; }
 
         .hidden { display: none !important; }
         button { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; }
@@ -167,7 +174,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         <div class="content">
           <div class="info-row">
             <div class="mini-art" id="miniArtClick"><img id="miniImg"><div id="miniPlaceholder" class="placeholder-svg"></div></div>
-            <div style="flex:1; overflow:hidden; padding-right: 25px;">
+            <div style="flex:1; overflow:hidden; padding-right: 35px;">
               <div class="marquee-container"><div class="track-title marquee-text" id="tTitle">Loading...</div></div>
               <div class="track-artist" id="tArtist"></div>
             </div>
@@ -178,8 +185,10 @@ class CrowMediaPlayerCard2 extends HTMLElement {
             <button class="nav-btn" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
             <button class="play-btn" id="btnPlay"><svg viewBox="0 0 24 24" id="playIcon"></svg></button>
             <button class="nav-btn" id="btnNext"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-            <svg class="vol-icon" id="volMuteBtn" viewBox="0 0 24 24"></svg>
-            <input type="range" class="volume-slider" id="vSlider" min="0" max="100">
+            <div class="vol-section">
+                <svg class="vol-icon" id="volMuteBtn" viewBox="0 0 24 24"></svg>
+                <input type="range" class="volume-slider" id="vSlider" min="0" max="100">
+            </div>
           </div>
 
           <select class="selector" id="eSelector"></select>
@@ -283,8 +292,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     }
   }
 }
-
-// ... Visual Editor Code remains ...
 
 if (!customElements.get('crow-media-player-card-2')) {
   customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
