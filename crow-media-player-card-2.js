@@ -50,11 +50,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   connectedCallback() {
     this._timer = setInterval(() => this.updateLiveProgress(), 1000);
     this._alexaPulse = setInterval(() => {
-      // FIX: Check if hass exists, connection is active, and entity is valid before calling service
       if (this._hass && this._hass.connected && this._entity && this._hass.states[this._entity]) {
-        this._hass.callService('homeassistant', 'update_entity', { entity_id: this._entity }).catch(() => {
-          // Silent catch to prevent UI errors during transient connection drops
-        });
+        this._hass.callService('homeassistant', 'update_entity', { entity_id: this._entity }).catch(() => {});
       }
     }, 10000);
   }
@@ -277,6 +274,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
 
     const sel = r.getElementById('eSelector');
     if (sel) {
+      const currentVal = sel.value;
       sel.innerHTML = (this._config.entities || []).map(ent => {
         const s = this._hass.states[ent];
         return `<option value="${ent}" ${ent === this._entity ? 'selected' : ''}>${s?.attributes?.friendly_name || ent}</option>`;
@@ -291,7 +289,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 }
 
-// --- VISUAL EDITOR ---
+// --- VISUAL EDITOR (With Reordering + Mobile Support) ---
 class CrowMediaPlayerCard2Editor extends HTMLElement {
   constructor() {
     super();
@@ -332,14 +330,14 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        .container { display: flex; flex-direction: column; gap: 18px; padding: 10px; color: var(--primary-text-color); }
+        .container { display: flex; flex-direction: column; gap: 18px; padding: 10px; color: var(--primary-text-color); font-family: sans-serif; }
         .row { display: flex; flex-direction: column; gap: 8px; }
         label { font-weight: bold; font-size: 14px; }
         input[type="text"], .checklist { width: 100%; background: var(--card-background-color); color: var(--primary-text-color); border: 1px solid #444; border-radius: 4px; }
-        .checklist { max-height: 250px; overflow-y: auto; margin-top: 5px; }
-        .check-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #333; }
-        .dragging { opacity: 0.3; }
-        .drag-handle { cursor: grab; padding: 10px; color: #888; }
+        .checklist { max-height: 300px; overflow-y: auto; margin-top: 5px; -webkit-overflow-scrolling: touch; }
+        .check-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #333; background: var(--card-background-color); touch-action: none; }
+        .dragging { opacity: 0.5; background: #444 !important; }
+        .drag-handle { cursor: grab; padding: 10px; color: #888; font-size: 20px; user-select: none; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; }
         .color-section { display: flex; gap: 15px; }
         .color-item { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -363,7 +361,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
           </div>
         </div>
         <div class="row">
-          <label>Manage Media Players</label>
+          <label>Manage & Reorder Media Players</label>
           <input type="text" id="search" placeholder="Filter entities...">
           <div class="checklist" id="entityList">
             ${sortedList.map(ent => {
@@ -372,7 +370,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
                 <div class="check-item" data-id="${ent}" draggable="${isSelected}">
                   <div class="drag-handle">☰</div>
                   <input type="checkbox" ${isSelected ? 'checked' : ''}>
-                  <span style="margin-left: 10px;">${this._hass.states[ent]?.attributes?.friendly_name || ent}</span>
+                  <span style="margin-left: 10px; flex: 1;">${this._hass.states[ent]?.attributes?.friendly_name || ent}</span>
                 </div>
               `;
             }).join('')}
@@ -382,7 +380,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     `;
 
     this._setupSearch();
-    this._setupDragAndDrop();
+    this._setupReordering();
     this._setupListeners();
     this.updateUI();
   }
@@ -397,22 +395,52 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     });
   }
 
-  _setupDragAndDrop() {
+  _setupReordering() {
     const list = this.shadowRoot.getElementById('entityList');
     let draggedItem = null;
+
+    // Desktop Mouse Drag
     list.addEventListener('dragstart', (e) => {
       draggedItem = e.target.closest('.check-item');
+      if (!draggedItem.querySelector('input').checked) { e.preventDefault(); return; }
       draggedItem.classList.add('dragging');
     });
-    list.addEventListener('dragend', () => {
-      draggedItem.classList.remove('dragging');
-      this._saveOrder();
-    });
+
     list.addEventListener('dragover', (e) => {
       e.preventDefault();
       const afterElement = this._getDragAfterElement(list, e.clientY);
       if (afterElement == null) list.appendChild(draggedItem);
       else list.insertBefore(draggedItem, afterElement);
+    });
+
+    list.addEventListener('dragend', () => {
+      draggedItem.classList.remove('dragging');
+      this._saveOrder();
+    });
+
+    // Mobile Touch Drag
+    list.addEventListener('touchstart', (e) => {
+      if (e.target.classList.contains('drag-handle')) {
+        draggedItem = e.target.closest('.check-item');
+        if (!draggedItem.querySelector('input').checked) return;
+        draggedItem.classList.add('dragging');
+      }
+    }, { passive: false });
+
+    list.addEventListener('touchmove', (e) => {
+      if (!draggedItem) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = this._getDragAfterElement(list, touch.clientY);
+      if (afterElement == null) list.appendChild(draggedItem);
+      else list.insertBefore(draggedItem, afterElement);
+    }, { passive: false });
+
+    list.addEventListener('touchend', () => {
+      if (!draggedItem) return;
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+      this._saveOrder();
     });
   }
 
