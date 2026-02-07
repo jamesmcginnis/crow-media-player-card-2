@@ -1,3 +1,8 @@
+/**
+ * Crow Media Player Card 2
+ * Includes: Reordering, Mobile Support, Pressed Glow Effects, and Connection Safety.
+ */
+
 class CrowMediaPlayerCard2 extends HTMLElement {
   constructor() {
     super();
@@ -300,7 +305,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 }
 
-// --- VISUAL EDITOR ---
 class CrowMediaPlayerCard2Editor extends HTMLElement {
   constructor() {
     super();
@@ -487,7 +491,7 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
   }
 }
 
-// --- SECURE REGISTRATION ---
+// FAIL-SAFE REGISTRATION
 if (!customElements.get('crow-media-player-card-2')) {
   customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
 }
