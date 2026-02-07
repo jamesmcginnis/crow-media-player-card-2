@@ -116,7 +116,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
         
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
-        .marquee-text { display: inline-block; animation: none; }
+        .marquee-text { display: inline-block; }
         @keyframes marquee { 
           0%, 10% { transform: translateX(0); }
           90%, 100% { transform: translateX(calc(-100% + 120px)); }
@@ -128,35 +128,34 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 2px; transition: width 0.3s ease; }
         .controls { display: flex; justify-content: center; align-items: center; margin: 15px 0; gap: 20px; }
         
-        /* Glow Effect on Press */
-        button:active svg { 
+        button:active svg, .vol-icon:active { 
           filter: drop-shadow(0 0 8px var(--accent));
           transform: scale(0.95);
+        }
+        input[type="range"]:active::-webkit-slider-thumb {
+          box-shadow: 0 0 10px var(--vol-accent);
         }
 
         .play-btn svg { width: 44px; height: 44px; fill: #fff; }
         .nav-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.9); }
-        .volume-stepper { display: none; gap: 20px; justify-content: center; margin-top: 5px; }
-        .vol-btn svg { width: 24px; height: 24px; fill: #fff; }
-
         .volume-slider { width: 100%; height: 4px; accent-color: var(--vol-accent); margin-top: 10px; }
+        .vol-icon { display: none; width: 18px; height: 18px; fill: rgba(255,255,255,0.5); margin-left: auto; cursor: pointer; transition: transform 0.1s ease; }
+
         .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; }
         
-        /* MODE COMPACT */
         .mode-compact .art-wrapper { display: none; }
-        .mode-compact .mini-art { display: flex; width: 48px; height: 48px; }
-        .mode-compact .content { padding: 10px; gap: 5px; }
+        .mode-compact .mini-art { display: flex; width: 44px; height: 44px; }
+        .mode-compact .content { padding: 10px; gap: 2px; }
         .mode-compact .info-row { margin-bottom: 0; }
-        .mode-compact .track-title { font-size: 15px; }
-        .mode-compact .track-artist { font-size: 13px; }
-        .mode-compact .controls { margin: 8px 0; gap: 18px; }
-        .mode-compact .play-btn svg { width: 32px; height: 32px; }
-        .mode-compact .nav-btn svg { width: 22px; height: 22px; }
-        
-        /* Switch Slider for Stepper */
-        .mode-compact .volume-slider, .mode-compact .selector, .mode-compact .extra-btn { display: none; }
-        .mode-compact .volume-stepper { display: flex; }
-        .mode-compact .size-toggle { top: 8px; right: 8px; width: 24px; height: 24px; }
+        .mode-compact .track-title { font-size: 14px; }
+        .mode-compact .track-artist { font-size: 12px; }
+        .mode-compact .controls { margin: 6px 0 2px 0; gap: 12px; justify-content: flex-start; }
+        .mode-compact .play-btn svg { width: 30px; height: 30px; }
+        .mode-compact .nav-btn svg { width: 20px; height: 20px; }
+        .mode-compact .vol-icon { display: block; }
+        .mode-compact .volume-slider { margin-top: 0; width: 70px; margin-left: 4px; }
+        .mode-compact .selector, .mode-compact .extra-btn { display: none; }
+        .mode-compact .size-toggle { top: 8px; right: 8px; width: 22px; height: 22px; }
 
         .hidden { display: none !important; }
         button { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; }
@@ -168,7 +167,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         <div class="content">
           <div class="info-row">
             <div class="mini-art" id="miniArtClick"><img id="miniImg"><div id="miniPlaceholder" class="placeholder-svg"></div></div>
-            <div style="flex:1; overflow:hidden; padding-right: 30px;">
+            <div style="flex:1; overflow:hidden; padding-right: 25px;">
               <div class="marquee-container"><div class="track-title marquee-text" id="tTitle">Loading...</div></div>
               <div class="track-artist" id="tArtist"></div>
             </div>
@@ -179,14 +178,10 @@ class CrowMediaPlayerCard2 extends HTMLElement {
             <button class="nav-btn" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
             <button class="play-btn" id="btnPlay"><svg viewBox="0 0 24 24" id="playIcon"></svg></button>
             <button class="nav-btn" id="btnNext"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+            <svg class="vol-icon" id="volMuteBtn" viewBox="0 0 24 24"></svg>
+            <input type="range" class="volume-slider" id="vSlider" min="0" max="100">
           </div>
 
-          <div class="volume-stepper">
-            <button class="vol-btn" id="volDown"><svg viewBox="0 0 24 24"><path d="M19,13H5V11H19V13Z"/></svg></button>
-            <button class="vol-btn" id="volUp"><svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg></button>
-          </div>
-
-          <input type="range" class="volume-slider" id="vSlider" min="0" max="100">
           <select class="selector" id="eSelector"></select>
         </div>
       </ha-card>
@@ -198,14 +193,15 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     r.getElementById('modeBtn').onclick = () => r.getElementById('cardOuter').classList.toggle('mode-compact');
     r.getElementById('artClick').onclick = () => this.openMoreInfo();
     r.getElementById('miniArtClick').onclick = () => this.openMoreInfo();
-
-    r.getElementById('btnPlay').onclick = () => this.call('media_play_pause');
-    r.getElementById('btnPrev').onclick = () => this.call('media_previous_track');
-    r.getElementById('btnNext').onclick = () => this.call('media_next_track');
+    r.getElementById('btnPlay').onclick = (e) => { e.stopPropagation(); this.call('media_play_pause'); };
+    r.getElementById('btnPrev').onclick = (e) => { e.stopPropagation(); this.call('media_previous_track'); };
+    r.getElementById('btnNext').onclick = (e) => { e.stopPropagation(); this.call('media_next_track'); };
     
-    // Volume Stepper Logic
-    r.getElementById('volUp').onclick = () => this.adjustVolume(0.05);
-    r.getElementById('volDown').onclick = () => this.adjustVolume(-0.05);
+    r.getElementById('volMuteBtn').onclick = (e) => {
+      e.stopPropagation();
+      const state = this._hass.states[this._entity];
+      this.call('volume_mute', { is_volume_muted: !state.attributes.is_volume_muted });
+    };
 
     r.getElementById('vSlider').oninput = (e) => this.call('volume_set', { volume_level: e.target.value / 100 });
     r.getElementById('progWrap').onclick = (e) => this.doSeek(e);
@@ -221,13 +217,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     const event = new Event("hass-more-info", { bubbles: true, composed: true });
     event.detail = { entityId: this._entity };
     this.dispatchEvent(event);
-  }
-
-  adjustVolume(step) {
-    const state = this._hass.states[this._entity];
-    let newVol = (state.attributes.volume_level || 0) + step;
-    newVol = Math.min(Math.max(newVol, 0), 1);
-    this.call('volume_set', { volume_level: newVol });
   }
 
   call(svc, data = {}) {
@@ -268,13 +257,22 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     } else {
       mainImg.classList.add('hidden'); miniImg.classList.add('hidden');
       r.getElementById('mainPlaceholder').innerHTML = this.getDeviceIcon(state);
-      r.getElementById('miniPlaceholder').innerHTML = this.getDeviceIcon(state).replace('width="120" height="120"', 'width="26" height="26"');
+      r.getElementById('miniPlaceholder').innerHTML = this.getDeviceIcon(state).replace('width="120" height="120"', 'width="24" height="24"');
       r.getElementById('mainPlaceholder').classList.remove('hidden');
       r.getElementById('miniPlaceholder').classList.remove('hidden');
     }
 
     r.getElementById('playIcon').innerHTML = isPlaying ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
     r.getElementById('vSlider').value = (state.attributes.volume_level || 0) * 100;
+
+    const muteBtn = r.getElementById('volMuteBtn');
+    if (state.attributes.is_volume_muted) {
+      muteBtn.innerHTML = '<path d="M3.27,3L2,4.27L9.73,12L2,19.73L3.27,21L11,13.27L18.73,21L20,19.73L12.27,12L20,4.27L18.73,3L11,10.73L3.27,3Z"/>';
+      muteBtn.style.fill = 'rgba(255,0,0,0.6)';
+    } else {
+      muteBtn.innerHTML = '<path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18.01,19.86 21,16.28 21,12C21,7.72 18.01,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.02C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/>';
+      muteBtn.style.fill = 'rgba(255,255,255,0.5)';
+    }
 
     const sel = r.getElementById('eSelector');
     if (sel) {
@@ -286,8 +284,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 }
 
-// Visual Editor class omitted for brevity but remains the same as previous version...
-// [The existing Editor code from the previous block should be used here]
+// ... Visual Editor Code remains ...
 
 if (!customElements.get('crow-media-player-card-2')) {
   customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
