@@ -12,13 +12,15 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { entities: [], auto_switch: true, accent_color: '#007AFF' };
+    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF', blur_amount: 40 };
   }
 
   setConfig(config) {
     if (!config.entities || config.entities.length === 0) throw new Error("Please define entities");
     this._config = {
       accent_color: '#007AFF',
+      volume_accent: '#007AFF',
+      blur_amount: 40,
       auto_switch: true,
       ...config
     };
@@ -90,11 +92,11 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        :host { display: block; --accent: #007AFF; }
+        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; --blur: 40px; }
         ha-card { 
           background: rgba(28, 28, 30, 0.72) !important;
-          backdrop-filter: blur(40px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+          backdrop-filter: blur(var(--blur)) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(var(--blur)) saturate(180%) !important;
           color: #fff !important; 
           border-radius: 24px !important; 
           overflow: hidden; 
@@ -115,7 +117,18 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
         .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
-        .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: #fff; }
+        
+        /* Scrolling Text logic */
+        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
+        .marquee-text { display: inline-block; padding-left: 0%; animation: none; }
+        @keyframes marquee { 
+          0% { transform: translateX(0); }
+          10% { transform: translateX(0); }
+          90% { transform: translateX(calc(-100% + 200px)); }
+          100% { transform: translateX(calc(-100% + 200px)); }
+        }
+
+        .track-title { font-size: 19px; font-weight: 600; letter-spacing: -0.3px; color: #fff; }
         .track-artist { font-size: 15px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 400; }
         .progress-bar { height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 3px; margin-bottom: 6px; cursor: pointer; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
@@ -125,7 +138,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .nav-btn svg { width: 32px; height: 32px; fill: rgba(255, 255, 255, 0.9); }
         .extra-btn svg { width: 28px; height: 28px; fill: rgba(255, 255, 255, 0.5); }
         .extra-btn.active svg { fill: var(--accent); }
-        .volume-slider { width: 100%; height: 5px; accent-color: var(--accent); margin-top: 12px; }
+        .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 12px; }
         .selector { width: 100%; padding: 11px 14px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; margin-top: 16px; font-size: 14px; cursor: pointer; }
         .mode-compact .art-wrapper { display: none; }
         .mode-compact .mini-art { display: flex; }
@@ -141,7 +154,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
           <div class="info-row">
             <div class="mini-art" id="miniArtClick"><img id="miniImg"><div id="miniPlaceholder" class="placeholder-svg"></div></div>
             <div style="flex:1; overflow:hidden;">
-              <div class="track-title" id="tTitle">Loading...</div>
+              <div class="marquee-container"><div class="track-title marquee-text" id="tTitle">Loading...</div></div>
               <div class="track-artist" id="tArtist"></div>
             </div>
           </div>
@@ -228,8 +241,23 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     const r = this.shadowRoot;
     if (!state || !r) return;
     const isPlaying = state.state === 'playing';
+    
+    // Set Config Styles
     r.host.style.setProperty('--accent', this._config.accent_color);
-    r.getElementById('tTitle').textContent = state.attributes.media_title || (isPlaying ? 'Music' : 'Idle');
+    r.host.style.setProperty('--vol-accent', this._config.volume_accent || this._config.accent_color);
+    r.host.style.setProperty('--blur', (this._config.blur_amount || 40) + 'px');
+
+    const titleEl = r.getElementById('tTitle');
+    const titleText = state.attributes.media_title || (isPlaying ? 'Music' : 'Idle');
+    titleEl.textContent = titleText;
+
+    // Apply marquee if title is long
+    if (titleText.length > 25) {
+      titleEl.style.animation = "marquee 8s linear infinite alternate";
+    } else {
+      titleEl.style.animation = "none";
+    }
+
     r.getElementById('tArtist').textContent = state.attributes.media_artist || state.attributes.friendly_name || '';
 
     r.getElementById('btnShuffle').classList.toggle('active', isPlaying && state.attributes.shuffle === true);
@@ -299,10 +327,10 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
   updateUI() {
     const root = this.shadowRoot;
     if (!root) return;
-    const colorInput = root.getElementById('accent_color');
-    if (colorInput) colorInput.value = this._config.accent_color || '#007AFF';
-    const autoSwitchInput = root.getElementById('auto_switch');
-    if (autoSwitchInput) autoSwitchInput.checked = this._config.auto_switch !== false;
+    root.getElementById('accent_color').value = this._config.accent_color || '#007AFF';
+    root.getElementById('volume_accent').value = this._config.volume_accent || '#007AFF';
+    root.getElementById('blur_amount').value = this._config.blur_amount || 40;
+    root.getElementById('auto_switch').checked = this._config.auto_switch !== false;
   }
 
   render() {
@@ -318,6 +346,8 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
       <style>
         .container { display: flex; flex-direction: column; gap: 18px; padding: 10px; color: var(--primary-text-color); }
         .row { display: flex; flex-direction: column; gap: 8px; }
+        .side-by-side { display: flex; gap: 10px; }
+        .side-by-side div { flex: 1; }
         label { font-weight: bold; font-size: 14px; }
         input[type="text"], .checklist { width: 100%; background: var(--card-background-color); color: var(--primary-text-color); border: 1px solid #444; border-radius: 4px; }
         .checklist { max-height: 250px; overflow-y: auto; }
@@ -327,16 +357,29 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
         .toggle-row { display: flex; align-items: center; justify-content: space-between; }
       </style>
       <div class="container">
-        <div class="row">
-          <label>Accent Color</label>
-          <input type="color" id="accent_color" style="width: 100%; height: 40px;" value="${this._config.accent_color || '#007AFF'}">
+        <div class="side-by-side">
+          <div class="row">
+            <label>Main Accent</label>
+            <input type="color" id="accent_color" style="width: 100%; height: 40px;" value="${this._config.accent_color || '#007AFF'}">
+          </div>
+          <div class="row">
+            <label>Volume Accent</label>
+            <input type="color" id="volume_accent" style="width: 100%; height: 40px;" value="${this._config.volume_accent || '#007AFF'}">
+          </div>
         </div>
+
+        <div class="row">
+          <label>Glass Blur (px): <span id="blurVal">${this._config.blur_amount || 40}</span></label>
+          <input type="range" id="blur_amount" min="0" max="100" value="${this._config.blur_amount || 40}">
+        </div>
+
         <div class="row">
           <div class="toggle-row">
             <label>Auto Switch</label>
             <input type="checkbox" id="auto_switch" ${this._config.auto_switch !== false ? 'checked' : ''}>
           </div>
         </div>
+
         <div class="row">
           <label>Media Players</label>
           <input type="text" id="search" placeholder="Filter entities..." value="${this._searchTerm}">
@@ -412,8 +455,16 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     this.shadowRoot.querySelectorAll('.check-item input').forEach(cb => {
       cb.onclick = () => this._saveOrder();
     });
+    
     this.shadowRoot.getElementById('accent_color').onchange = (e) => this._updateConfig('accent_color', e.target.value);
+    this.shadowRoot.getElementById('volume_accent').onchange = (e) => this._updateConfig('volume_accent', e.target.value);
     this.shadowRoot.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
+    
+    const blurSlider = this.shadowRoot.getElementById('blur_amount');
+    blurSlider.oninput = (e) => {
+      this.shadowRoot.getElementById('blurVal').textContent = e.target.value;
+      this._updateConfig('blur_amount', parseInt(e.target.value));
+    };
   }
 
   _updateConfig(key, value) {
