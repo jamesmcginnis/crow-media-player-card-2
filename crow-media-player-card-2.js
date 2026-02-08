@@ -146,10 +146,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
 
         .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 10px; }
         .vol-section { display: contents; }
-        .vol-btn { display: none; width: 32px; height: 32px; flex-shrink: 0; }
-        .vol-icon { width: 20px; height: 20px; fill: rgba(255,255,255,0.7); transition: fill 0.2s; }
-        .vol-btn.active .vol-icon { fill: var(--accent); }
-
+        .vol-icon { display: none; width: 18px; height: 18px; fill: rgba(255,255,255,0.5); cursor: pointer; }
         .selector { width: 100%; padding: 10px; background: rgba(58, 58, 60, 0.6); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-top: 15px; font-size: 13px; cursor: pointer; text-align: center; text-align-last: center; }
         
         .mode-compact .art-wrapper { display: none; }
@@ -162,7 +159,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mode-compact .play-btn svg { width: 30px; height: 30px; }
         .mode-compact .nav-btn svg { width: 20px; height: 20px; }
         .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 10px; }
-        .mode-compact .vol-btn { display: flex; }
+        .mode-compact .vol-icon { display: block; flex-shrink: 0; }
         .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 60px; }
         .mode-compact .selector, .mode-compact .extra-btn, .mode-compact .progress-times { display: none; }
         .mode-compact .size-toggle { top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.1); }
@@ -191,7 +188,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
             <button class="nav-btn" id="btnNext"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
             <button class="extra-btn" id="btnRepeat"><svg viewBox="0 0 24 24" id="repeatIcon"></svg></button>
             <div class="vol-section">
-                <button class="vol-btn" id="btnMute"><svg class="vol-icon" id="volIcon" viewBox="0 0 24 24"></svg></button>
+                <svg class="vol-icon" id="volMuteBtn" viewBox="0 0 24 24"></svg>
                 <input type="range" class="volume-slider" id="vSlider" min="0" max="100">
             </div>
           </div>
@@ -216,10 +213,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     r.getElementById('btnPlay').onclick = () => this.call('media_play_pause');
     r.getElementById('btnPrev').onclick = () => this.call('media_previous_track');
     r.getElementById('btnNext').onclick = () => this.call('media_next_track');
-    r.getElementById('btnMute').onclick = () => {
-      const state = this._hass.states[this._entity];
-      this.call('volume_mute', { is_volume_muted: !state.attributes.is_volume_muted });
-    };
     r.getElementById('btnShuffle').onclick = () => {
       const state = this._hass.states[this._entity];
       this.call('shuffle_set', { shuffle: !state.attributes.shuffle });
@@ -230,7 +223,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
       this.call('repeat_set', { repeat: next });
     };
 
-    ['btnPlay', 'btnPrev', 'btnNext', 'btnShuffle', 'btnRepeat', 'modeBtn', 'btnMute'].forEach(id => addPressEffect(r.getElementById(id)));
+    ['btnPlay', 'btnPrev', 'btnNext', 'btnShuffle', 'btnRepeat', 'modeBtn'].forEach(id => addPressEffect(r.getElementById(id)));
 
     r.getElementById('vSlider').oninput = (e) => this.call('volume_set', { volume_level: e.target.value / 100 });
     r.getElementById('eSelector').onchange = (e) => { 
@@ -263,8 +256,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     const r = this.shadowRoot;
     if (!state || !r) return;
     const isPlaying = state.state === 'playing';
-    const isMuted = state.attributes.is_volume_muted;
-
     r.host.style.setProperty('--accent', this._config.accent_color);
     r.host.style.setProperty('--vol-accent', this._config.volume_accent || this._config.accent_color);
 
@@ -272,13 +263,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     r.getElementById('tArtist').textContent = state.attributes.media_artist || state.attributes.friendly_name || '';
 
     r.getElementById('btnShuffle').classList.toggle('active', isPlaying && state.attributes.shuffle === true);
-    
-    // Update Mute UI
-    r.getElementById('btnMute').classList.toggle('active', isMuted);
-    r.getElementById('volIcon').innerHTML = isMuted 
-      ? '<path d="M3.27,3L2,4.27L7.73,10H3V14H7L12,19V14.27L17.04,19.31C16.13,19.75 15.1,20 14,20V18C14.58,18 15.13,17.87 15.62,17.63L12,14.01V14.85L10,12.85V12H8.85L3.27,3M14,10V12.18L19.07,17.25C19.67,15.87 20,14.32 20,12C20,7.64 17.34,4.5 14,4V6C16.22,6.46 18,8.81 18,12C18,12.83 17.91,13.63 17.75,14.37L14.71,11.33L14,10.62V10M12,5V8.18L9.18,5.36L12,5Z"/>'
-      : '<path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.03C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/>';
-
     const rep = state.attributes.repeat;
     r.getElementById('btnRepeat').classList.toggle('active', isPlaying && rep !== undefined && rep !== 'off');
     r.getElementById('repeatIcon').innerHTML = rep === 'one' 
