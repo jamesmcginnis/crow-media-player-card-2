@@ -155,14 +155,14 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mode-compact .track-title { font-size: 14px; }
         .mode-compact .track-artist { font-size: 12px; margin-bottom: 0; }
         
-        /* ADJUSTED: Width set to 100% and justify-content changed to maximize slider length */
-        .mode-compact .controls { margin: 6px 0 2px 0; gap: 8px; justify-content: flex-start; width: 100%; }
+        /* ADJUSTED: Reduced gap from 8px to 4px */
+        .mode-compact .controls { margin: 6px 0 2px 0; gap: 4px; justify-content: flex-start; width: 100%; }
         
         .mode-compact .play-btn svg { width: 30px; height: 30px; }
         .mode-compact .nav-btn svg { width: 20px; height: 20px; }
         
-        /* ADJUSTED: Flex 1 and zero margins to fill all available horizontal space */
-        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 0; padding-left: 4px; }
+        /* ADJUSTED: Reduced padding-left from 4px to 2px */
+        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 0; padding-left: 2px; }
         .mode-compact .vol-icon { display: block; flex-shrink: 0; }
         .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 50px; }
         
