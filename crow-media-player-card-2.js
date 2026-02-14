@@ -122,7 +122,7 @@ display: flex; align-items: center; justify-content: center; transition: all 0.2
 .art-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 .content { padding: 20px; display: flex; flex-direction: column; }
 .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
-.mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; }
+.mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; flex-shrink: 0; }
 .mini-art img { width: 100%; height: 100%; object-fit: cover; }
 .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: #fff; }
 .track-artist { font-size: 15px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 400; }
@@ -149,7 +149,7 @@ display: flex; align-items: center; justify-content: center; transition: all 0.2
       filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
     }
 
-    .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 10px; cursor: pointer; }
+    .volume-slider { width: 100%; height: 5px; accent-color: var(--vol-accent); margin-top: 10px; }
     .vol-section { display: contents; }
     .vol-icon { display: none; width: 22px; height: 22px; fill: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; }
     .vol-icon:hover { fill: rgba(255,255,255,0.9); }
@@ -167,7 +167,7 @@ display: flex; align-items: center; justify-content: center; transition: all 0.2
     .mode-compact .nav-btn svg { width: 20px; height: 20px; }
     .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 10px; gap: 8px; }
     .mode-compact .vol-icon { display: block; }
-    .mode-compact .volume-slider { margin-top: 0; flex: 1; min-width: 60px; }
+    .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 0; min-width: 60px; }
     .mode-compact .selector, .mode-compact .extra-btn, .mode-compact .progress-times { display: none; }
     .mode-compact .size-toggle { top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.1); }
     .mode-compact .size-toggle svg { width: 14px; height: 14px; }
@@ -233,7 +233,7 @@ r.getElementById('btnRepeat').onclick = () => {
   this.call('repeat_set', { repeat: next });
 };
 
-// Mute toggle button
+// Mute toggle button - NEW
 r.getElementById('volMuteBtn').onclick = () => {
   const state = this._hass.states[this._entity];
   const isMuted = state.attributes.is_volume_muted;
@@ -306,11 +306,9 @@ if (isPlaying && artUrl) {
 }
 
 r.getElementById('playIcon').innerHTML = isPlaying ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
-
-// Update volume slider
 r.getElementById('vSlider').value = (state.attributes.volume_level || 0) * 100;
 
-// Update mute icon
+// Update mute icon - NEW
 const isMuted = state.attributes.is_volume_muted;
 const volumeLevel = state.attributes.volume_level || 0;
 const muteIcon = r.getElementById('volMuteIcon');
@@ -542,21 +540,20 @@ this.dispatchEvent(new CustomEvent(“config-changed”, { detail: { config: new
 }
 }
 
-// Register custom elements
+// FAIL-SAFE REGISTRATION
+if (!customElements.get(‘crow-media-player-card-2’)) {
 customElements.define(‘crow-media-player-card-2’, CrowMediaPlayerCard2);
+}
+if (!customElements.get(‘crow-media-player-card-2-editor’)) {
 customElements.define(‘crow-media-player-card-2-editor’, CrowMediaPlayerCard2Editor);
+}
 
-// Register with Home Assistant
 window.customCards = window.customCards || [];
+if (!window.customCards.some(card => card.type === “crow-media-player-card-2”)) {
 window.customCards.push({
 type: “crow-media-player-card-2”,
 name: “Crow Media Player Card 2”,
 preview: true,
-description: “A sleek media player with mute toggle, device switching and visual editor.”
+description: “A sleek media player with device switching and visual editor.”
 });
-
-console.info(
-’%c CROW-MEDIA-PLAYER-CARD-2 %c Version 2.0 with Mute Toggle ’,
-‘color: white; background: #007AFF; font-weight: 700;’,
-‘color: #007AFF; background: white; font-weight: 700;’
-);
+}
