@@ -4,7 +4,7 @@
 - Includes: Reordering, Mobile Support, Pressed Glow Effects, Connection Safety, and Mute Toggle.
   */
 
-class CrowMediaPlayerCard2 extends HTMLElement {
+class CrowMediaPlayerCard2Updated extends HTMLElement {
 constructor() {
 super();
 this.attachShadow({ mode: ‘open’ });
@@ -14,7 +14,7 @@ this._entity = null;
 }
 
 static getConfigElement() {
-return document.createElement(“crow-media-player-card-2-editor”);
+return document.createElement(“crow-media-player-card-2-updated-editor”);
 }
 
 static getStubConfig() {
@@ -350,7 +350,7 @@ return `${m}:${rs < 10 ? '0' : ''}${rs}`;
 }
 }
 
-class CrowMediaPlayerCard2Editor extends HTMLElement {
+class CrowMediaPlayerCard2UpdatedEditor extends HTMLElement {
 constructor() {
 super();
 this.attachShadow({ mode: ‘open’ });
@@ -542,20 +542,14 @@ this.dispatchEvent(new CustomEvent(“config-changed”, { detail: { config: new
 }
 }
 
-// FAIL-SAFE REGISTRATION
-if (!customElements.get(‘crow-media-player-card-2’)) {
-customElements.define(‘crow-media-player-card-2’, CrowMediaPlayerCard2);
-}
-if (!customElements.get(‘crow-media-player-card-2-editor’)) {
-customElements.define(‘crow-media-player-card-2-editor’, CrowMediaPlayerCard2Editor);
-}
+// CUSTOM ELEMENT REGISTRATION
+customElements.define(‘crow-media-player-card-2-updated’, CrowMediaPlayerCard2Updated);
+customElements.define(‘crow-media-player-card-2-updated-editor’, CrowMediaPlayerCard2UpdatedEditor);
 
 window.customCards = window.customCards || [];
-if (!window.customCards.some(card => card.type === “crow-media-player-card-2”)) {
 window.customCards.push({
-type: “crow-media-player-card-2”,
-name: “Crow Media Player Card 2”,
+type: “crow-media-player-card-2-updated”,
+name: “Crow Media Player Card 2 Updated”,
 preview: true,
-description: “A sleek media player with device switching and visual editor.”
+description: “A sleek media player with mute toggle, device switching and visual editor.”
 });
-}
