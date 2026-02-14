@@ -158,7 +158,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mode-compact .controls { margin: 6px 0 2px 0; gap: 12px; justify-content: center; }
         .mode-compact .play-btn svg { width: 30px; height: 30px; }
         .mode-compact .nav-btn svg { width: 20px; height: 20px; }
-        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 10px; }
+        /* CHANGE: Removed margin-left: 10px to allow slider to fill blank space */
+        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 0; }
         .mode-compact .vol-icon { display: block; flex-shrink: 0; }
         .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 60px; }
         .mode-compact .selector, .mode-compact .extra-btn, .mode-compact .progress-times { display: none; }
