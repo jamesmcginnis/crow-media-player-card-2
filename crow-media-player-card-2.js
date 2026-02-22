@@ -16,14 +16,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 
   static getStubConfig() {
-    return {
-      entities: [],
-      auto_switch: true,
-      accent_color: '#007AFF',
-      volume_accent: '#007AFF',
-      title_color: '#ffffff',
-      artist_color: '#b3b3b3'
-    };
+    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF' };
   }
 
   setConfig(config) {
@@ -31,8 +24,6 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this._config = {
       accent_color: '#007AFF',
       volume_accent: '#007AFF',
-      title_color: '#ffffff',
-      artist_color: '#b3b3b3',
       auto_switch: true,
       ...config
     };
@@ -99,13 +90,10 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 
   render() {
-    const tc = this._config?.title_color  || '#ffffff';
-    const ac = this._config?.artist_color || '#b3b3b3';
-
     this.shadowRoot.innerHTML = `
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; --title-color: ${tc}; --artist-color: ${ac}; }
+        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; }
         ha-card { 
           background: rgba(28, 28, 30, 0.72) !important;
           backdrop-filter: blur(40px) saturate(180%) !important;
@@ -131,8 +119,8 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
         .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; flex-shrink: 0; }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
-        .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: var(--title-color); }
-        .track-artist { font-size: 15px; color: var(--artist-color); margin-bottom: 12px; font-weight: 400; }
+        .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: #fff; }
+        .track-artist { font-size: 15px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 400; }
         .progress-bar { height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 3px; margin-bottom: 6px; cursor: pointer; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
         .progress-times { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.5); font-variant-numeric: tabular-nums; }
@@ -213,171 +201,3 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     `;
   }
   // Rest of code remains same...
-}
-
-// ─────────────────────────────────────────────
-//  Visual Editor
-// ─────────────────────────────────────────────
-class CrowMediaPlayerCard2Editor extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-  }
-
-  setConfig(config) {
-    this._config = { ...config };
-    this._buildForm();
-  }
-
-  // HA calls this to pass hass into the editor
-  set hass(hass) {
-    this._hass = hass;
-    if (this._form) this._form.hass = hass;
-  }
-
-  _dispatch(updates) {
-    this._config = { ...this._config, ...updates };
-    this.dispatchEvent(new CustomEvent('config-changed', {
-      detail: { config: this._config },
-      bubbles: true,
-      composed: true,
-    }));
-  }
-
-  _hexFallback(value, fallback) {
-    if (value && /^#[0-9a-fA-F]{6}$/.test(value)) return value;
-    return fallback;
-  }
-
-  _buildForm() {
-    if (!this._config) return;
-
-    // Build ha-form for everything except the two colour fields,
-    // which ha-form can't do well with a colour picker. We append
-    // those manually below the form.
-    if (!this._form) {
-      this._form = document.createElement('ha-form');
-      this._form.schema = [
-        {
-          name: 'entities',
-          label: 'Media player entities',
-          selector: { entity: { multiple: true, domain: 'media_player' } }
-        },
-        {
-          name: 'auto_switch',
-          label: 'Auto-switch to playing entity',
-          selector: { boolean: {} }
-        },
-        {
-          name: 'accent_color',
-          label: 'Accent colour',
-          selector: { text: {} }
-        },
-        {
-          name: 'volume_accent',
-          label: 'Volume accent colour',
-          selector: { text: {} }
-        },
-      ];
-      this._form.computeLabel = (schema) => schema.label || schema.name;
-      this._form.addEventListener('value-changed', e => {
-        this._dispatch(e.detail.value);
-      });
-      this.shadowRoot.appendChild(this._form);
-
-      // ── Colour pickers for title and artist ──────────────────
-      const colourSection = document.createElement('div');
-      colourSection.innerHTML = `
-        <style>
-          .colour-section { padding: 8px 0 0 0; }
-          .colour-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-top: 1px solid var(--divider-color, #e0e0e0);
-          }
-          .colour-label {
-            font-size: 14px;
-            color: var(--primary-text-color, #212121);
-            flex: 1;
-          }
-          .colour-pair { display: flex; align-items: center; gap: 6px; }
-          input[type="color"] {
-            width: 44px; height: 30px;
-            border: none; border-radius: 6px;
-            cursor: pointer; padding: 2px; background: none;
-          }
-          input[type="text"] {
-            width: 90px; font-size: 13px;
-            padding: 4px 6px;
-            border: 1px solid var(--divider-color, #ccc);
-            border-radius: 6px;
-            color: var(--primary-text-color, #212121);
-            background: var(--card-background-color, #fff);
-          }
-        </style>
-        <div class="colour-section">
-          <div class="colour-row">
-            <span class="colour-label">Song title colour</span>
-            <div class="colour-pair">
-              <input type="color" id="titlePicker">
-              <input type="text"  id="titleText" placeholder="#ffffff">
-            </div>
-          </div>
-          <div class="colour-row">
-            <span class="colour-label">Artist name colour</span>
-            <div class="colour-pair">
-              <input type="color" id="artistPicker">
-              <input type="text"  id="artistText" placeholder="#b3b3b3">
-            </div>
-          </div>
-        </div>
-      `;
-      this.shadowRoot.appendChild(colourSection);
-      this._colourSection = colourSection;
-
-      // Wire colour inputs
-      const wireColor = (pickerId, textId, key) => {
-        colourSection.querySelector(pickerId).addEventListener('input', e => {
-          colourSection.querySelector(textId).value = e.target.value;
-          this._dispatch({ [key]: e.target.value });
-        });
-        colourSection.querySelector(textId).addEventListener('change', e => {
-          const val = e.target.value.trim();
-          this._dispatch({ [key]: val });
-          if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-            colourSection.querySelector(pickerId).value = val;
-          }
-        });
-      };
-
-      wireColor('#titlePicker',  '#titleText',  'title_color');
-      wireColor('#artistPicker', '#artistText', 'artist_color');
-    }
-
-    // Sync values into ha-form and colour inputs
-    this._form.data = this._config;
-    if (this._hass) this._form.hass = this._hass;
-
-    const titleText   = this.shadowRoot.querySelector('#titleText');
-    const titlePicker = this.shadowRoot.querySelector('#titlePicker');
-    const artistText  = this.shadowRoot.querySelector('#artistText');
-    const artistPicker = this.shadowRoot.querySelector('#artistPicker');
-
-    if (titleText)   titleText.value   = this._config.title_color  || '#ffffff';
-    if (titlePicker) titlePicker.value = this._hexFallback(this._config.title_color,  '#ffffff');
-    if (artistText)  artistText.value  = this._config.artist_color || '#b3b3b3';
-    if (artistPicker) artistPicker.value = this._hexFallback(this._config.artist_color, '#b3b3b3');
-  }
-}
-
-customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
-customElements.define('crow-media-player-card-2-editor', CrowMediaPlayerCard2Editor);
-
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'crow-media-player-card-2',
-  name: 'Crow Media Player Card 2',
-  description: 'A stylish media player card with compact and full modes.',
-});
