@@ -1,5 +1,6 @@
 /**
- * Crow Media Player Card 2 - Larger Mini Buttons
+ * Crow Media Player Card 2
+ * Includes: Reordering, Mobile Support, Pressed Glow Effects, and Connection Safety.
  */
 
 class CrowMediaPlayerCard2 extends HTMLElement {
@@ -154,16 +155,12 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .mode-compact .info-row { margin-bottom: 0; }
         .mode-compact .track-title { font-size: 14px; }
         .mode-compact .track-artist { font-size: 12px; margin-bottom: 0; }
-        .mode-compact .controls { margin: 6px 0 2px 0; gap: 4px; justify-content: flex-start; width: 100%; }
-        
-        /* ADJUSTED: Sizes increased slightly for easier tapping */
-        .mode-compact .play-btn svg { width: 34px; height: 34px; }
-        .mode-compact .nav-btn svg { width: 24px; height: 24px; }
-        
-        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 0; padding-left: 2px; }
+        .mode-compact .controls { margin: 6px 0 2px 0; gap: 12px; justify-content: center; }
+        .mode-compact .play-btn svg { width: 30px; height: 30px; }
+        .mode-compact .nav-btn svg { width: 20px; height: 20px; }
+        .mode-compact .vol-section { display: flex; align-items: center; flex: 1; margin-left: 10px; }
         .mode-compact .vol-icon { display: block; flex-shrink: 0; }
-        .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 50px; }
-        
+        .mode-compact .volume-slider { margin-top: 0; flex: 1; margin-left: 6px; min-width: 60px; }
         .mode-compact .selector, .mode-compact .extra-btn, .mode-compact .progress-times { display: none; }
         .mode-compact .size-toggle { top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.1); }
         .mode-compact .size-toggle svg { width: 14px; height: 14px; }
@@ -200,4 +197,314 @@ class CrowMediaPlayerCard2 extends HTMLElement {
       </ha-card>
     `;
   }
-  // Rest of code remains same...
+
+  setupListeners() {
+    const r = this.shadowRoot;
+    const addPressEffect = (button) => {
+      button.addEventListener('pointerdown', () => button.classList.add('pressed'));
+      button.addEventListener('pointerup', () => button.classList.remove('pressed'));
+      button.addEventListener('pointerleave', () => button.classList.remove('pressed'));
+    };
+
+    r.getElementById('modeBtn').onclick = () => r.getElementById('cardOuter').classList.toggle('mode-compact');
+    r.getElementById('artClick').onclick = () => this._openMoreInfo();
+    r.getElementById('miniArtClick').onclick = () => this._openMoreInfo();
+
+    r.getElementById('btnPlay').onclick = () => this.call('media_play_pause');
+    r.getElementById('btnPrev').onclick = () => this.call('media_previous_track');
+    r.getElementById('btnNext').onclick = () => this.call('media_next_track');
+    r.getElementById('btnShuffle').onclick = () => {
+      const state = this._hass.states[this._entity];
+      this.call('shuffle_set', { shuffle: !state.attributes.shuffle });
+    };
+    r.getElementById('btnRepeat').onclick = () => {
+      const state = this._hass.states[this._entity];
+      const next = state.attributes.repeat === 'all' ? 'one' : state.attributes.repeat === 'one' ? 'off' : 'all';
+      this.call('repeat_set', { repeat: next });
+    };
+
+    ['btnPlay', 'btnPrev', 'btnNext', 'btnShuffle', 'btnRepeat', 'modeBtn'].forEach(id => addPressEffect(r.getElementById(id)));
+
+    r.getElementById('vSlider').oninput = (e) => this.call('volume_set', { volume_level: e.target.value / 100 });
+    r.getElementById('eSelector').onchange = (e) => { 
+      this._entity = e.target.value; 
+      this._manualSelection = true;
+      this.updateContent(this._hass.states[this._entity]);
+    };
+    r.getElementById('progWrap').onclick = (e) => this.doSeek(e);
+  }
+
+  _openMoreInfo() {
+    const event = new Event("hass-more-info", { bubbles: true, composed: true });
+    event.detail = { entityId: this._entity };
+    this.dispatchEvent(event);
+  }
+
+  call(svc, data = {}) {
+    this._hass.callService('media_player', svc, { entity_id: this._entity, ...data });
+  }
+
+  doSeek(e) {
+    const state = this._hass.states[this._entity];
+    if (!state || !state.attributes.media_duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    this.call('media_seek', { seek_position: state.attributes.media_duration * percent });
+  }
+
+  updateContent(state) {
+    const r = this.shadowRoot;
+    if (!state || !r) return;
+    const isPlaying = state.state === 'playing';
+    r.host.style.setProperty('--accent', this._config.accent_color);
+    r.host.style.setProperty('--vol-accent', this._config.volume_accent || this._config.accent_color);
+
+    r.getElementById('tTitle').textContent = state.attributes.media_title || (isPlaying ? 'Music' : 'Idle');
+    r.getElementById('tArtist').textContent = state.attributes.media_artist || state.attributes.friendly_name || '';
+
+    r.getElementById('btnShuffle').classList.toggle('active', isPlaying && state.attributes.shuffle === true);
+    const rep = state.attributes.repeat;
+    r.getElementById('btnRepeat').classList.toggle('active', isPlaying && rep !== undefined && rep !== 'off');
+    r.getElementById('repeatIcon').innerHTML = rep === 'one' 
+      ? '<path d="M7,7H17V10L21,6L17,2V5H5V11H7V7M17,17H7V14L3,18L7,22V19H19V13H17V17M10.75,15V13H9.5V12L10.7,11.9V11H11.75V15H10.75Z"/>'
+      : '<path d="M7,7H17V10L21,6L17,2V5H5V11H7V7M17,17H7V14L3,18L7,22V19H19V13H17V17Z"/>';
+
+    const artUrl = state.attributes.entity_picture;
+    const mainImg = r.getElementById('albumImg');
+    const miniImg = r.getElementById('miniImg');
+    if (isPlaying && artUrl) {
+      mainImg.src = artUrl; miniImg.src = artUrl;
+      mainImg.classList.remove('hidden'); miniImg.classList.remove('hidden');
+      r.getElementById('mainPlaceholder').classList.add('hidden');
+      r.getElementById('miniPlaceholder').classList.add('hidden');
+    } else {
+      mainImg.classList.add('hidden'); miniImg.classList.add('hidden');
+      r.getElementById('mainPlaceholder').innerHTML = this.getDeviceIcon(state);
+      r.getElementById('miniPlaceholder').innerHTML = this.getDeviceIcon(state).replace('width="120" height="120"', 'width="24" height="24"');
+      r.getElementById('mainPlaceholder').classList.remove('hidden');
+      r.getElementById('miniPlaceholder').classList.remove('hidden');
+    }
+
+    r.getElementById('playIcon').innerHTML = isPlaying ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+    r.getElementById('vSlider').value = (state.attributes.volume_level || 0) * 100;
+    r.getElementById('pTot').textContent = this.formatTime(state.attributes.media_duration || 0);
+
+    const sel = r.getElementById('eSelector');
+    if (sel) {
+      sel.innerHTML = (this._config.entities || []).map(ent => {
+        const s = this._hass.states[ent];
+        return `<option value="${ent}" ${ent === this._entity ? 'selected' : ''}>${s?.attributes?.friendly_name || ent}</option>`;
+      }).join('');
+    }
+  }
+
+  formatTime(s) {
+    if (!s || isNaN(s)) return "0:00";
+    const m = Math.floor(s / 60), rs = Math.floor(s % 60);
+    return `${m}:${rs < 10 ? '0' : ''}${rs}`;
+  }
+}
+
+class CrowMediaPlayerCard2Editor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._initialized = false;
+    this._searchTerm = "";
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (!this._initialized) this.render();
+  }
+
+  setConfig(config) {
+    this._config = config;
+    if (this._initialized) this.updateUI();
+  }
+
+  updateUI() {
+    const root = this.shadowRoot;
+    if (!root) return;
+    const colorInput = root.getElementById('accent_color');
+    if (colorInput) colorInput.value = this._config.accent_color || '#007AFF';
+    const volColorInput = root.getElementById('volume_accent');
+    if (volColorInput) volColorInput.value = this._config.volume_accent || this._config.accent_color || '#007AFF';
+    const autoSwitchInput = root.getElementById('auto_switch');
+    if (autoSwitchInput) autoSwitchInput.checked = this._config.auto_switch !== false;
+  }
+
+  render() {
+    if (!this._hass || !this._config) return;
+    this._initialized = true;
+    const selected = this._config.entities || [];
+    const others = Object.keys(this._hass.states)
+      .filter(e => e.startsWith('media_player.') && !selected.includes(e))
+      .sort();
+    const sortedList = [...selected, ...others];
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        .container { display: flex; flex-direction: column; gap: 18px; padding: 10px; color: var(--primary-text-color); font-family: sans-serif; }
+        .row { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: bold; font-size: 14px; }
+        input[type="text"], .checklist { width: 100%; background: var(--card-background-color); color: var(--primary-text-color); border: 1px solid #444; border-radius: 4px; }
+        .checklist { max-height: 300px; overflow-y: auto; margin-top: 5px; -webkit-overflow-scrolling: touch; }
+        .check-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #333; background: var(--card-background-color); touch-action: none; }
+        .dragging { opacity: 0.5; background: #444 !important; }
+        .drag-handle { cursor: grab; padding: 10px; color: #888; font-size: 20px; user-select: none; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+        .color-section { display: flex; gap: 15px; }
+        .color-item { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        input[type="color"] { width: 100%; height: 40px; cursor: pointer; border: 1px solid #444; border-radius: 4px; background: none; }
+      </style>
+      <div class="container">
+        <div class="color-section">
+          <div class="color-item">
+            <label>Main Accent</label>
+            <input type="color" id="accent_color">
+          </div>
+          <div class="color-item">
+            <label>Volume Accent</label>
+            <input type="color" id="volume_accent">
+          </div>
+        </div>
+        <div class="row">
+          <div class="toggle-row">
+            <label>Auto Switch Entities</label>
+            <input type="checkbox" id="auto_switch">
+          </div>
+        </div>
+        <div class="row">
+          <label>Manage & Reorder Media Players</label>
+          <input type="text" id="search" placeholder="Filter entities...">
+          <div class="checklist" id="entityList">
+            ${sortedList.map(ent => {
+              const isSelected = selected.includes(ent);
+              return `
+                <div class="check-item" data-id="${ent}" draggable="${isSelected}">
+                  <div class="drag-handle">☰</div>
+                  <input type="checkbox" ${isSelected ? 'checked' : ''}>
+                  <span style="margin-left: 10px; flex: 1;">${this._hass.states[ent]?.attributes?.friendly_name || ent}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    this._setupSearch();
+    this._setupReordering();
+    this._setupListeners();
+    this.updateUI();
+  }
+
+  _setupSearch() {
+    const searchInput = this.shadowRoot.getElementById('search');
+    searchInput.addEventListener('input', (e) => {
+      this._searchTerm = e.target.value.toLowerCase();
+      this.shadowRoot.querySelectorAll('.check-item').forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(this._searchTerm) ? 'flex' : 'none';
+      });
+    });
+  }
+
+  _setupReordering() {
+    const list = this.shadowRoot.getElementById('entityList');
+    let draggedItem = null;
+
+    list.addEventListener('dragstart', (e) => {
+      draggedItem = e.target.closest('.check-item');
+      if (!draggedItem.querySelector('input').checked) { e.preventDefault(); return; }
+      draggedItem.classList.add('dragging');
+    });
+
+    list.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = this._getDragAfterElement(list, e.clientY);
+      if (afterElement == null) list.appendChild(draggedItem);
+      else list.insertBefore(draggedItem, afterElement);
+    });
+
+    list.addEventListener('dragend', () => {
+      draggedItem.classList.remove('dragging');
+      this._saveOrder();
+    });
+
+    list.addEventListener('touchstart', (e) => {
+      if (e.target.classList.contains('drag-handle')) {
+        draggedItem = e.target.closest('.check-item');
+        if (!draggedItem.querySelector('input').checked) return;
+        draggedItem.classList.add('dragging');
+      }
+    }, { passive: false });
+
+    list.addEventListener('touchmove', (e) => {
+      if (!draggedItem) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const afterElement = this._getDragAfterElement(list, touch.clientY);
+      if (afterElement == null) list.appendChild(draggedItem);
+      else list.insertBefore(draggedItem, afterElement);
+    }, { passive: false });
+
+    list.addEventListener('touchend', () => {
+      if (!draggedItem) return;
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+      this._saveOrder();
+    });
+  }
+
+  _getDragAfterElement(container, y) {
+    const draggables = [...container.querySelectorAll('.check-item:not(.dragging)')];
+    return draggables.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      else return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  _saveOrder() {
+    const newOrder = Array.from(this.shadowRoot.querySelectorAll('.check-item'))
+      .filter(i => i.querySelector('input').checked)
+      .map(i => i.getAttribute('data-id'));
+    this._updateConfig('entities', newOrder);
+  }
+
+  _setupListeners() {
+    const root = this.shadowRoot;
+    root.querySelectorAll('.check-item input').forEach(cb => {
+      cb.onclick = () => this._saveOrder();
+    });
+    root.getElementById('accent_color').oninput = (e) => this._updateConfig('accent_color', e.target.value);
+    root.getElementById('volume_accent').oninput = (e) => this._updateConfig('volume_accent', e.target.value);
+    root.getElementById('auto_switch').onchange = (e) => this._updateConfig('auto_switch', e.target.checked);
+  }
+
+  _updateConfig(key, value) {
+    if (!this._config) return;
+    const newConfig = { ...this._config, [key]: value };
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
+  }
+}
+
+// FAIL-SAFE REGISTRATION
+if (!customElements.get('crow-media-player-card-2')) {
+  customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
+}
+if (!customElements.get('crow-media-player-card-2-editor')) {
+  customElements.define('crow-media-player-card-2-editor', CrowMediaPlayerCard2Editor);
+}
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some(card => card.type === "crow-media-player-card-2")) {
+  window.customCards.push({
+    type: "crow-media-player-card-2",
+    name: "Crow Media Player Card 2",
+    preview: true,
+    description: "A sleek media player with device switching and visual editor."
+  });
+}
