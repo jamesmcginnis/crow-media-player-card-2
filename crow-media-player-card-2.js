@@ -219,13 +219,20 @@ class CrowMediaPlayerCard2 extends HTMLElement {
 //  Visual Editor
 // ─────────────────────────────────────────────
 class CrowMediaPlayerCard2Editor extends HTMLElement {
-  setConfig(config) {
-    this._config = { ...config };
-    this._render();
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
   }
 
-  connectedCallback() {
-    this._render();
+  setConfig(config) {
+    this._config = { ...config };
+    this._buildForm();
+  }
+
+  // HA calls this to pass hass into the editor
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) this._form.hass = hass;
   }
 
   _dispatch(updates) {
@@ -237,170 +244,131 @@ class CrowMediaPlayerCard2Editor extends HTMLElement {
     }));
   }
 
-  // The native colour picker only accepts 6-digit hex.
-  // Fall back to a plain default so it never errors on other values.
   _hexFallback(value, fallback) {
     if (value && /^#[0-9a-fA-F]{6}$/.test(value)) return value;
     return fallback;
   }
 
-  _render() {
+  _buildForm() {
     if (!this._config) return;
-    const cfg = this._config;
-    const entitiesText = Array.isArray(cfg.entities) ? cfg.entities.join('\n') : '';
 
-    this.innerHTML = `
-      <style>
-        .editor-section { margin-bottom: 16px; }
-        .editor-section-title {
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: var(--secondary-text-color, #888);
-          margin-bottom: 8px;
-        }
-        .editor-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 0;
-          border-bottom: 1px solid var(--divider-color, #e0e0e0);
-        }
-        .editor-row:last-child { border-bottom: none; }
-        .editor-label {
-          font-size: 14px;
-          color: var(--primary-text-color, #212121);
-          flex: 1;
-        }
-        textarea {
-          width: 100%;
-          min-height: 72px;
-          font-size: 13px;
-          padding: 8px;
-          border: 1px solid var(--divider-color, #ccc);
-          border-radius: 6px;
-          color: var(--primary-text-color, #212121);
-          background: var(--card-background-color, #fff);
-          resize: vertical;
-          font-family: monospace;
-          box-sizing: border-box;
-        }
-        .color-pair {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        input[type="color"] {
-          width: 44px;
-          height: 30px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          padding: 2px;
-          background: none;
-        }
-        input[type="text"] {
-          width: 100px;
-          font-size: 13px;
-          padding: 4px 6px;
-          border: 1px solid var(--divider-color, #ccc);
-          border-radius: 6px;
-          color: var(--primary-text-color, #212121);
-          background: var(--card-background-color, #fff);
-        }
-        input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-        }
-        .hint {
-          font-size: 11px;
-          color: var(--secondary-text-color, #888);
-          margin-top: 4px;
-        }
-      </style>
-
-      <!-- Entities -->
-      <div class="editor-section">
-        <div class="editor-section-title">Entities</div>
-        <textarea id="entitiesField" placeholder="media_player.my_speaker&#10;media_player.another_speaker">${entitiesText}</textarea>
-        <div class="hint">One entity ID per line</div>
-      </div>
-
-      <!-- General -->
-      <div class="editor-section">
-        <div class="editor-section-title">General</div>
-        <div class="editor-row">
-          <span class="editor-label">Auto-switch to playing</span>
-          <input type="checkbox" id="autoSwitch" ${cfg.auto_switch ? 'checked' : ''}>
-        </div>
-      </div>
-
-      <!-- Colours -->
-      <div class="editor-section">
-        <div class="editor-section-title">Colours</div>
-        <div class="editor-row">
-          <span class="editor-label">Accent colour</span>
-          <div class="color-pair">
-            <input type="color" id="accentPicker" value="${this._hexFallback(cfg.accent_color, '#007AFF')}">
-            <input type="text"  id="accentText"   value="${cfg.accent_color || '#007AFF'}" placeholder="#007AFF">
-          </div>
-        </div>
-        <div class="editor-row">
-          <span class="editor-label">Volume accent colour</span>
-          <div class="color-pair">
-            <input type="color" id="volumeAccentPicker" value="${this._hexFallback(cfg.volume_accent, '#007AFF')}">
-            <input type="text"  id="volumeAccentText"   value="${cfg.volume_accent || '#007AFF'}" placeholder="#007AFF">
-          </div>
-        </div>
-        <div class="editor-row">
-          <span class="editor-label">Song title colour</span>
-          <div class="color-pair">
-            <input type="color" id="titleColorPicker" value="${this._hexFallback(cfg.title_color, '#ffffff')}">
-            <input type="text"  id="titleColorText"   value="${cfg.title_color || '#ffffff'}" placeholder="#ffffff">
-          </div>
-        </div>
-        <div class="editor-row">
-          <span class="editor-label">Artist name colour</span>
-          <div class="color-pair">
-            <input type="color" id="artistColorPicker" value="${this._hexFallback(cfg.artist_color, '#b3b3b3')}">
-            <input type="text"  id="artistColorText"   value="${cfg.artist_color || '#b3b3b3'}" placeholder="#b3b3b3">
-          </div>
-        </div>
-      </div>
-    `;
-
-    // ── Entities ──────────────────────────────────────────────
-    this.querySelector('#entitiesField').addEventListener('change', e => {
-      const entities = e.target.value.split('\n').map(s => s.trim()).filter(Boolean);
-      this._dispatch({ entities });
-    });
-
-    // ── Auto switch ───────────────────────────────────────────
-    this.querySelector('#autoSwitch').addEventListener('change', e => {
-      this._dispatch({ auto_switch: e.target.checked });
-    });
-
-    // ── Helper: wire up a colour picker + text pair ───────────
-    const wireColor = (pickerId, textId, key) => {
-      this.querySelector(pickerId).addEventListener('input', e => {
-        this.querySelector(textId).value = e.target.value;
-        this._dispatch({ [key]: e.target.value });
+    // Build ha-form for everything except the two colour fields,
+    // which ha-form can't do well with a colour picker. We append
+    // those manually below the form.
+    if (!this._form) {
+      this._form = document.createElement('ha-form');
+      this._form.schema = [
+        {
+          name: 'entities',
+          label: 'Media player entities',
+          selector: { entity: { multiple: true, domain: 'media_player' } }
+        },
+        {
+          name: 'auto_switch',
+          label: 'Auto-switch to playing entity',
+          selector: { boolean: {} }
+        },
+        {
+          name: 'accent_color',
+          label: 'Accent colour',
+          selector: { text: {} }
+        },
+        {
+          name: 'volume_accent',
+          label: 'Volume accent colour',
+          selector: { text: {} }
+        },
+      ];
+      this._form.computeLabel = (schema) => schema.label || schema.name;
+      this._form.addEventListener('value-changed', e => {
+        this._dispatch(e.detail.value);
       });
-      this.querySelector(textId).addEventListener('change', e => {
-        const val = e.target.value.trim();
-        this._dispatch({ [key]: val });
-        if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-          this.querySelector(pickerId).value = val;
-        }
-      });
-    };
+      this.shadowRoot.appendChild(this._form);
 
-    wireColor('#accentPicker',       '#accentText',       'accent_color');
-    wireColor('#volumeAccentPicker', '#volumeAccentText', 'volume_accent');
-    wireColor('#titleColorPicker',   '#titleColorText',   'title_color');
-    wireColor('#artistColorPicker',  '#artistColorText',  'artist_color');
+      // ── Colour pickers for title and artist ──────────────────
+      const colourSection = document.createElement('div');
+      colourSection.innerHTML = `
+        <style>
+          .colour-section { padding: 8px 0 0 0; }
+          .colour-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-top: 1px solid var(--divider-color, #e0e0e0);
+          }
+          .colour-label {
+            font-size: 14px;
+            color: var(--primary-text-color, #212121);
+            flex: 1;
+          }
+          .colour-pair { display: flex; align-items: center; gap: 6px; }
+          input[type="color"] {
+            width: 44px; height: 30px;
+            border: none; border-radius: 6px;
+            cursor: pointer; padding: 2px; background: none;
+          }
+          input[type="text"] {
+            width: 90px; font-size: 13px;
+            padding: 4px 6px;
+            border: 1px solid var(--divider-color, #ccc);
+            border-radius: 6px;
+            color: var(--primary-text-color, #212121);
+            background: var(--card-background-color, #fff);
+          }
+        </style>
+        <div class="colour-section">
+          <div class="colour-row">
+            <span class="colour-label">Song title colour</span>
+            <div class="colour-pair">
+              <input type="color" id="titlePicker">
+              <input type="text"  id="titleText" placeholder="#ffffff">
+            </div>
+          </div>
+          <div class="colour-row">
+            <span class="colour-label">Artist name colour</span>
+            <div class="colour-pair">
+              <input type="color" id="artistPicker">
+              <input type="text"  id="artistText" placeholder="#b3b3b3">
+            </div>
+          </div>
+        </div>
+      `;
+      this.shadowRoot.appendChild(colourSection);
+      this._colourSection = colourSection;
+
+      // Wire colour inputs
+      const wireColor = (pickerId, textId, key) => {
+        colourSection.querySelector(pickerId).addEventListener('input', e => {
+          colourSection.querySelector(textId).value = e.target.value;
+          this._dispatch({ [key]: e.target.value });
+        });
+        colourSection.querySelector(textId).addEventListener('change', e => {
+          const val = e.target.value.trim();
+          this._dispatch({ [key]: val });
+          if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+            colourSection.querySelector(pickerId).value = val;
+          }
+        });
+      };
+
+      wireColor('#titlePicker',  '#titleText',  'title_color');
+      wireColor('#artistPicker', '#artistText', 'artist_color');
+    }
+
+    // Sync values into ha-form and colour inputs
+    this._form.data = this._config;
+    if (this._hass) this._form.hass = this._hass;
+
+    const titleText   = this.shadowRoot.querySelector('#titleText');
+    const titlePicker = this.shadowRoot.querySelector('#titlePicker');
+    const artistText  = this.shadowRoot.querySelector('#artistText');
+    const artistPicker = this.shadowRoot.querySelector('#artistPicker');
+
+    if (titleText)   titleText.value   = this._config.title_color  || '#ffffff';
+    if (titlePicker) titlePicker.value = this._hexFallback(this._config.title_color,  '#ffffff');
+    if (artistText)  artistText.value  = this._config.artist_color || '#b3b3b3';
+    if (artistPicker) artistPicker.value = this._hexFallback(this._config.artist_color, '#b3b3b3');
   }
 }
 
