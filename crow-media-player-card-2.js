@@ -16,7 +16,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF' };
+    return { entities: [], auto_switch: true, accent_color: '#007AFF', volume_accent: '#007AFF', title_color: '#ffffff', artist_color: 'rgba(255,255,255,0.7)' };
   }
 
   setConfig(config) {
@@ -24,10 +24,16 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this._config = {
       accent_color: '#007AFF',
       volume_accent: '#007AFF',
+      title_color: '#ffffff',
+      artist_color: 'rgba(255,255,255,0.7)',
       auto_switch: true,
       ...config
     };
     if (!this._entity) this._entity = this._config.entities[0];
+
+    // Apply colour custom properties whenever config changes
+    this.style.setProperty('--title-color', this._config.title_color);
+    this.style.setProperty('--artist-color', this._config.artist_color);
   }
 
   set hass(hass) {
@@ -93,7 +99,7 @@ class CrowMediaPlayerCard2 extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; }
+        :host { display: block; --accent: #007AFF; --vol-accent: #007AFF; --title-color: #ffffff; --artist-color: rgba(255,255,255,0.7); }
         ha-card { 
           background: rgba(28, 28, 30, 0.72) !important;
           backdrop-filter: blur(40px) saturate(180%) !important;
@@ -119,8 +125,9 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         .info-row { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
         .mini-art { display: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; background: rgba(40, 40, 45, 0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; flex-shrink: 0; }
         .mini-art img { width: 100%; height: 100%; object-fit: cover; }
-        .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: #fff; }
-        .track-artist { font-size: 15px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; font-weight: 400; }
+        /* Title and artist colours driven by CSS custom properties */
+        .track-title { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px; color: var(--title-color, #fff); }
+        .track-artist { font-size: 15px; color: var(--artist-color, rgba(255,255,255,0.7)); margin-bottom: 12px; font-weight: 400; }
         .progress-bar { height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 3px; margin-bottom: 6px; cursor: pointer; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
         .progress-times { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.5); font-variant-numeric: tabular-nums; }
@@ -199,5 +206,145 @@ class CrowMediaPlayerCard2 extends HTMLElement {
         </div>
       </ha-card>
     `;
+
+    // Re-apply colour variables after render, since shadow DOM resets
+    const card = this.shadowRoot.getElementById('cardOuter');
+    if (card && this._config) {
+      card.style.setProperty('--title-color', this._config.title_color);
+      card.style.setProperty('--artist-color', this._config.artist_color);
+    }
   }
   // Rest of code remains same...
+}
+
+// ─────────────────────────────────────────────
+//  Visual Editor
+// ─────────────────────────────────────────────
+class CrowMediaPlayerCard2Editor extends HTMLElement {
+  setConfig(config) {
+    this._config = config;
+    this.render();
+  }
+
+  render() {
+    if (!this._config) return;
+
+    const cfg = this._config;
+
+    this.innerHTML = `
+      <style>
+        .editor-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px solid var(--divider-color, #e0e0e0);
+        }
+        .editor-row:last-child { border-bottom: none; }
+        .editor-label {
+          font-size: 14px;
+          color: var(--primary-text-color, #212121);
+          flex: 1;
+        }
+        .editor-row input[type="color"] {
+          width: 48px;
+          height: 32px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          padding: 2px;
+          background: none;
+        }
+        .editor-row input[type="text"] {
+          width: 110px;
+          font-size: 13px;
+          padding: 4px 6px;
+          border: 1px solid var(--divider-color, #ccc);
+          border-radius: 6px;
+          color: var(--primary-text-color, #212121);
+          background: var(--card-background-color, #fff);
+          margin-left: 8px;
+        }
+        .color-pair {
+          display: flex;
+          align-items: center;
+        }
+      </style>
+
+      <div class="editor-row">
+        <span class="editor-label">Song title colour</span>
+        <div class="color-pair">
+          <input type="color" id="titleColorPicker" value="${this._hexFallback(cfg.title_color, '#ffffff')}">
+          <input type="text"  id="titleColorText"   value="${cfg.title_color || '#ffffff'}" placeholder="#ffffff">
+        </div>
+      </div>
+
+      <div class="editor-row">
+        <span class="editor-label">Artist name colour</span>
+        <div class="color-pair">
+          <input type="color" id="artistColorPicker" value="${this._hexFallback(cfg.artist_color, '#b3b3b3')}">
+          <input type="text"  id="artistColorText"   value="${cfg.artist_color || 'rgba(255,255,255,0.7)'}" placeholder="rgba(255,255,255,0.7)">
+        </div>
+      </div>
+    `;
+
+    // ── Title colour ──────────────────────────────────────────
+    this.querySelector('#titleColorPicker').addEventListener('input', e => {
+      this.querySelector('#titleColorText').value = e.target.value;
+      this._dispatch('title_color', e.target.value);
+    });
+    this.querySelector('#titleColorText').addEventListener('change', e => {
+      const val = e.target.value.trim();
+      this._dispatch('title_color', val);
+      // Sync picker if it's a plain hex
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        this.querySelector('#titleColorPicker').value = val;
+      }
+    });
+
+    // ── Artist colour ─────────────────────────────────────────
+    this.querySelector('#artistColorPicker').addEventListener('input', e => {
+      this.querySelector('#artistColorText').value = e.target.value;
+      this._dispatch('artist_color', e.target.value);
+    });
+    this.querySelector('#artistColorText').addEventListener('change', e => {
+      const val = e.target.value.trim();
+      this._dispatch('artist_color', val);
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        this.querySelector('#artistColorPicker').value = val;
+      }
+    });
+  }
+
+  /** Fire a config-changed event that the HA card editor framework listens for. */
+  _dispatch(key, value) {
+    this._config = { ...this._config, [key]: value };
+    this.dispatchEvent(new CustomEvent('config-changed', {
+      detail: { config: this._config },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  /**
+   * The native <input type="color"> only accepts 6-digit hex values.
+   * For rgba() strings we fall back to a sensible default hex so the
+   * picker at least opens without an error, while the text field
+   * continues to hold the full value.
+   */
+  _hexFallback(value, fallback) {
+    if (!value) return fallback;
+    if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+    return fallback;
+  }
+}
+
+customElements.define('crow-media-player-card-2', CrowMediaPlayerCard2);
+customElements.define('crow-media-player-card-2-editor', CrowMediaPlayerCard2Editor);
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: 'crow-media-player-card-2',
+  name: 'Crow Media Player Card 2',
+  description: 'A stylish media player card with compact and full modes.',
+});
